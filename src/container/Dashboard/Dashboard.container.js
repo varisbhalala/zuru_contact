@@ -10,43 +10,140 @@ import TableCell from "@material-ui/core/TableCell";
 import TableHead from "@material-ui/core/TableHead";
 import TableRow from "@material-ui/core/TableRow";
 import Checkbox from "@material-ui/core/Checkbox";
+import Modal from "react-modal";
+
+const customStyles = {
+  content: {
+    top: "50%",
+    minWidth: "500px",
+    left: "50%",
+    right: "auto",
+    bottom: "auto",
+    marginRight: "-50%",
+    transform: "translate(-50%, -50%)",
+  }
+};
 
 const Dashboard = () => {
   const [contacts, setContacts] = useState(null);
   const [contactInfo, setContactInfo] = useState(null);
-  const [searchedText, setSearchedText] = useState('')
+  const [searchedText, setSearchedText] = useState("");
+  const [isContactModalOpen, setContactModalOpen] = useState(false);
   useEffect(() => {
     (async () => {
       try {
         let res = await require("config/data");
-        let data = res?.data?.response
-        if(searchedText.length === 0){
+        let data = res?.data?.response;
+        if (searchedText.length === 0) {
           setContacts(data);
-          data?.length > 0 && setContactInfo(data[0])
+          data?.length > 0 && setContactInfo(data[0]);
         } else {
-          let searchResult = []
-          data.forEach((item) => {
-            console.log('in here', item)
-            if(item?.firstName.toLowerCase().includes(searchedText) || item?.lastName.toLowerCase().includes(searchedText)){
-              
-              searchResult.push(item)
+          let searchResult = [];
+          data.forEach(item => {
+            console.log("in here", item);
+            if (
+              item?.firstName.toLowerCase().includes(searchedText) ||
+              item?.lastName.toLowerCase().includes(searchedText)
+            ) {
+              searchResult.push(item);
             }
-          })
-          setContacts(searchResult)
+          });
+          setContacts(searchResult);
         }
-        
       } catch (e) {
         console.log(e);
       }
     })();
   }, [searchedText]);
 
-  const changeDetail = (i) => {
-    setContactInfo(contacts[i])
-  }
+  const changeDetail = i => {
+    setContactInfo(contacts[i]);
+  };
 
   return (
     <div>
+      <Modal
+        isOpen={isContactModalOpen}
+        onRequestClose={() => setContactModalOpen(false)}
+        style={customStyles}
+        shouldCloseOnOverlayClick
+      >
+        <div className="contact__modal_content">
+          <div className="modal__title__row">
+            <div className="modal__title">Add Contact</div>
+            <div
+              className="modal__close__btn"
+              onClick={() => {
+                setContactModalOpen(false);
+              }}
+            >
+              <img src={images.close_icon} alt="close" />
+            </div>
+          </div>
+          <div className="modal__fields__content">
+            <div className="modal__input__field">
+              <input
+                type="text"
+                className="search__input__box"
+                placeholder="First Name"
+                onChange={e => {}}
+              />
+            </div>
+            <div className="modal__input__field">
+              <input
+                type="text"
+                className="search__input__box"
+                placeholder="Last Name"
+                onChange={e => {}}
+              />
+            </div>
+            <div className="modal__input__field">
+              <input
+                type="text"
+                className="search__input__box"
+                placeholder="Email"
+                onChange={e => {}}
+              />
+            </div>
+            <div className="modal__input__field">
+              <input
+                type="text"
+                className="search__input__box"
+                placeholder="Phone"
+                onChange={e => {}}
+              />
+            </div>
+            <div className="modal__input__field">
+              <input
+                type="text"
+                className="search__input__box"
+                placeholder="Company"
+                onChange={e => {}}
+              />
+            </div>
+            <div className="modal__input__field">
+              <input
+                type="text"
+                className="search__input__box"
+                placeholder="Address"
+                onChange={e => {}}
+              />
+            </div>
+            <div className="modal__input__field">
+            <div className="add__contact">
+                <button
+                  className="add_contact__btn"
+                  onClick={() => {
+                    setContactModalOpen(true);
+                  }}
+                >
+                  <div className="add_contact_btn_text">Add Contact</div>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </Modal>
       <Navigation />
       <Container maxWidth="xl">
         <Grid item xs={12}>
@@ -65,13 +162,18 @@ const Dashboard = () => {
                   className="search__input__box"
                   placeholder="Search Contact"
                   value={searchedText}
-                  onChange={(e) => {
-                    setSearchedText(e.target.value.toLowerCase())
+                  onChange={e => {
+                    setSearchedText(e.target.value.toLowerCase());
                   }}
                 />
               </div>
               <div className="add__contact">
-                <button className="add_contact__btn">
+                <button
+                  className="add_contact__btn"
+                  onClick={() => {
+                    setContactModalOpen(true);
+                  }}
+                >
                   <img src={images.add_icon} className="add_icon" alt="add" />
                   <div className="add_contact_btn_text">Add Contact</div>
                 </button>
@@ -97,9 +199,13 @@ const Dashboard = () => {
                       </TableHead>
                       <TableBody>
                         {contacts?.map((contact, i) => (
-                          <TableRow key={i} className="table__row" onClick={() => changeDetail(i)}>
+                          <TableRow
+                            key={i}
+                            className="table__row"
+                            onClick={() => changeDetail(i)}
+                          >
                             <TableCell>
-                              <img src={images.edit_icon} alt="edit"/>
+                              <img src={images.edit_icon} alt="edit" />
                             </TableCell>
                             <TableCell>
                               <div className="contact_name_with_label">
@@ -136,7 +242,9 @@ const Dashboard = () => {
                       <div className="basic__info__row">
                         <div className="basic__info">
                           <div className="basic_info_initials">
-                            {`${contactInfo?.firstName.charAt(0)}${contactInfo?.lastName?.charAt(0)}`}
+                            {`${contactInfo?.firstName.charAt(
+                              0
+                            )}${contactInfo?.lastName?.charAt(0)}`}
                           </div>
                           <div className="basic__info__name">
                             {`${contactInfo?.firstName} ${contactInfo?.lastName}`}
@@ -154,19 +262,27 @@ const Dashboard = () => {
                           </tr>
                           <tr className="info__table__row">
                             <td className="info__table__cell">Email</td>
-                            <td className="info__table__cell">{contactInfo?.email}</td>
+                            <td className="info__table__cell">
+                              {contactInfo?.email}
+                            </td>
                           </tr>
                           <tr className="info__table__row">
                             <td className="info__table__cell">Phone</td>
-                            <td className="info__table__cell">{contactInfo?.phone}</td>
+                            <td className="info__table__cell">
+                              {contactInfo?.phone}
+                            </td>
                           </tr>
                           <tr className="info__table__row">
                             <td className="info__table__cell">Company</td>
-                            <td className="info__table__cell">{contactInfo?.company}</td>
+                            <td className="info__table__cell">
+                              {contactInfo?.company}
+                            </td>
                           </tr>
                           <tr className="info__table__row">
                             <td className="info__table__cell">Address</td>
-                            <td className="info__table__cell">{contactInfo?.address}</td>
+                            <td className="info__table__cell">
+                              {contactInfo?.address}
+                            </td>
                           </tr>
                         </table>
                       </div>
