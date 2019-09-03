@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import Navigation from "component/Navigation/Navigation.component";
 import Container from "@material-ui/core/Container";
 import Grid from "@material-ui/core/Grid";
@@ -11,6 +11,43 @@ import TableHead from "@material-ui/core/TableHead";
 import TableRow from "@material-ui/core/TableRow";
 import Checkbox from "@material-ui/core/Checkbox";
 import Modal from "react-modal";
+import * as yup from "yup";
+import { DashbaordStore } from "store/Dashboard.store";
+import { observer } from "mobx-react";
+import Input from "component/Input/Input.component";
+import ContactInfo from 'component/ContactInfo/ContactInfo.component'
+
+const schema = yup.object().shape({
+  firstName: yup
+    .string()
+    .trim()
+    .required("Please enter first name"),
+  lastName: yup
+    .string()
+    .trim()
+    .required("Please enter last name"),
+  role: yup
+    .string()
+    .trim()
+    .required("Please enter role"),
+  email: yup
+    .string()
+    .trim()
+    .required("Please provide email address")
+    .email("Please provide valid email address"),
+  phone: yup
+    .string()
+    .trim()
+    .required("Please enter phone number"),
+  company: yup
+    .string()
+    .trim()
+    .required("Please enter company"),
+  address: yup
+    .string()
+    .trim()
+    .required("Please enter address")
+});
 
 const customStyles = {
   content: {
@@ -20,38 +57,45 @@ const customStyles = {
     right: "auto",
     bottom: "auto",
     marginRight: "-50%",
-    transform: "translate(-50%, -50%)",
+    transform: "translate(-50%, -50%)"
   }
 };
 
 const Dashboard = () => {
-  const [contacts, setContacts] = useState(null);
+  const { getContacts, contacts, setContacts } = useContext(DashbaordStore);
+
+  // const [contacts, setContacts] = useState(null);
   const [contactInfo, setContactInfo] = useState(null);
+  const [isEdit, setIsEdit] = useState(-1);
   const [searchedText, setSearchedText] = useState("");
   const [isContactModalOpen, setContactModalOpen] = useState(false);
+  const [err, setErr] = useState("");
+  const [contactVars, setContactVars] = useState({
+    firstName: "",
+    lastName: "",
+    role: "",
+    email: "",
+    phone: "",
+    company: "",
+    address: ""
+  });
   useEffect(() => {
     (async () => {
-      try {
-        let res = await require("config/data");
-        let data = res?.data?.response;
-        if (searchedText.length === 0) {
-          setContacts(data);
-          data?.length > 0 && setContactInfo(data[0]);
-        } else {
-          let searchResult = [];
-          data.forEach(item => {
-            console.log("in here", item);
-            if (
-              item?.firstName.toLowerCase().includes(searchedText) ||
-              item?.lastName.toLowerCase().includes(searchedText)
-            ) {
-              searchResult.push(item);
-            }
-          });
-          setContacts(searchResult);
-        }
-      } catch (e) {
-        console.log(e);
+      await getContacts();
+      if (searchedText.length === 0) {
+        // setContacts(data);
+        contacts?.length > 0 && setContactInfo(contacts[0]);
+      } else {
+        let searchResult = [];
+        contacts.forEach(item => {
+          if (
+            item?.firstName.toLowerCase().includes(searchedText) ||
+            item?.lastName.toLowerCase().includes(searchedText)
+          ) {
+            searchResult.push(item);
+          }
+        });
+        setContacts(searchResult);
       }
     })();
   }, [searchedText]);
@@ -60,21 +104,87 @@ const Dashboard = () => {
     setContactInfo(contacts[i]);
   };
 
+  const handleAddContact = async () => {
+    var valitdationRes = await schema
+      .validate(contactVars, { abortEarly: false })
+      .catch(err => {
+        setErr(err?.errors[0]);
+        setIsEdit(false);
+        return;
+      });
+    if (valitdationRes) {
+      if (isEdit !== -1) {
+        let tempContacts = contacts;
+        contacts.forEach((item, i) => {
+          if (item.id === isEdit) {
+            tempContacts[i] = {
+              id: item.id,
+              firstName: contactVars.firstName,
+              lastName: contactVars.lastName,
+              role: contactVars.role,
+              phone: contactVars.phone,
+              email: contactVars.email,
+              company: contactVars.company,
+              address: contactVars.address
+            };
+            setContactInfo(tempContacts[item.id])
+          }
+        });
+        setContacts(tempContacts);
+        
+        setIsEdit(-1);
+        setErr("Contact has been updated");
+      } else {
+        setContacts([contactVars].concat(contacts));
+        setErr("Contact has been added");
+        setContactVars({
+          id: contacts.length + 1,
+          firstName: "",
+          lastName: "",
+          role: "",
+          email: "",
+          phone: "",
+          email: "",
+          company: "",
+          address: ""
+        });
+      }
+    }
+  };
+
+  const resetModal = () => {
+    setContactModalOpen(false);
+    setErr("");
+    setContactVars({
+      firstName: "",
+      lastName: "",
+      role: "",
+      phone: "",
+      email: "",
+      company: "",
+      address: ""
+    });
+  };
+
   return (
     <div>
       <Modal
         isOpen={isContactModalOpen}
-        onRequestClose={() => setContactModalOpen(false)}
+        onRequestClose={() => {
+          resetModal();
+        }}
         style={customStyles}
         shouldCloseOnOverlayClick
       >
         <div className="contact__modal_content">
           <div className="modal__title__row">
-            <div className="modal__title">Add Contact</div>
+            <div className="modal__title">{`${
+              isEdit !== -1 ? "Edit" : "Add"
+            } Contact`}</div>
             <div
               className="modal__close__btn"
               onClick={() => {
-                setContactModalOpen(false);
+                resetModal();
               }}
             >
               <img src={images.close_icon} alt="close" />
@@ -82,62 +192,89 @@ const Dashboard = () => {
           </div>
           <div className="modal__fields__content">
             <div className="modal__input__field">
-              <input
+              <Input
                 type="text"
-                className="search__input__box"
                 placeholder="First Name"
-                onChange={e => {}}
+                value={contactVars.firstName}
+                onChange={e => {
+                  setContactVars({ ...contactVars, firstName: e.target.value });
+                }}
               />
             </div>
             <div className="modal__input__field">
-              <input
+              <Input
                 type="text"
-                className="search__input__box"
                 placeholder="Last Name"
-                onChange={e => {}}
+                value={contactVars.lastName}
+                onChange={e => {
+                  setContactVars({ ...contactVars, lastName: e.target.value });
+                }}
               />
             </div>
             <div className="modal__input__field">
-              <input
+              <Input
                 type="text"
-                className="search__input__box"
+                placeholder="role"
+                value={contactVars.role}
+                onChange={e => {
+                  setContactVars({ ...contactVars, role: e.target.value });
+                }}
+              />
+            </div>
+            <div className="modal__input__field">
+              <Input
+                type="text"
                 placeholder="Email"
-                onChange={e => {}}
+                value={contactVars.email}
+                onChange={e => {
+                  setContactVars({ ...contactVars, email: e.target.value });
+                }}
               />
             </div>
             <div className="modal__input__field">
-              <input
+              <Input
                 type="text"
-                className="search__input__box"
                 placeholder="Phone"
-                onChange={e => {}}
+                value={contactVars.phone}
+                onChange={e => {
+                  setContactVars({ ...contactVars, phone: e.target.value });
+                }}
               />
             </div>
             <div className="modal__input__field">
-              <input
+              <Input
                 type="text"
-                className="search__input__box"
                 placeholder="Company"
-                onChange={e => {}}
+                value={contactVars.company}
+                onChange={e => {
+                  setContactVars({ ...contactVars, company: e.target.value });
+                }}
               />
             </div>
             <div className="modal__input__field">
-              <input
+              <Input
                 type="text"
-                className="search__input__box"
                 placeholder="Address"
-                onChange={e => {}}
+                value={contactVars.address}
+                onChange={e => {
+                  setContactVars({ ...contactVars, address: e.target.value });
+                }}
               />
             </div>
+            {err !== "" && (
+              <div className="modal__input__field">
+                <div className="validation__err">{err}</div>
+              </div>
+            )}
             <div className="modal__input__field">
-            <div className="add__contact">
+              <div className="add__contact">
                 <button
                   className="add_contact__btn"
                   onClick={() => {
-                    setContactModalOpen(true);
+                    handleAddContact();
                   }}
                 >
-                  <div className="add_contact_btn_text">Add Contact</div>
+                  <div className="add_contact_btn_text">{`${isEdit !== -1 ? 'Edit' : 'Add'} Contact`}</div>
                 </button>
               </div>
             </div>
@@ -157,10 +294,9 @@ const Dashboard = () => {
             </div>
             <div className="search__content">
               <div className="search__field">
-                <input
+                <Input
                   type="text"
-                  className="search__input__box"
-                  placeholder="Search Contact"
+                  placeholder="Search"
                   value={searchedText}
                   onChange={e => {
                     setSearchedText(e.target.value.toLowerCase());
@@ -205,7 +341,23 @@ const Dashboard = () => {
                             onClick={() => changeDetail(i)}
                           >
                             <TableCell>
-                              <img src={images.edit_icon} alt="edit" />
+                              <img
+                                src={images.edit_icon}
+                                alt="edit"
+                                onClick={() => {
+                                  setContactVars({
+                                    firstName: contact.firstName,
+                                    lastName: contact.lastName,
+                                    role: contact.role,
+                                    email: contact.email,
+                                    phone: contact.phone,
+                                    company: contact.company,
+                                    address: contact.address
+                                  });
+                                  setIsEdit(contact.id);
+                                  setContactModalOpen(true);
+                                }}
+                              />
                             </TableCell>
                             <TableCell>
                               <div className="contact_name_with_label">
@@ -237,57 +389,7 @@ const Dashboard = () => {
                   </div>
                 </Grid>
                 <Grid item md={12} lg={6}>
-                  <div className="contact__info">
-                    <div className="info__content">
-                      <div className="basic__info__row">
-                        <div className="basic__info">
-                          <div className="basic_info_initials">
-                            {`${contactInfo?.firstName.charAt(
-                              0
-                            )}${contactInfo?.lastName?.charAt(0)}`}
-                          </div>
-                          <div className="basic__info__name">
-                            {`${contactInfo?.firstName} ${contactInfo?.lastName}`}
-                          </div>
-                          <div className="basic__info__role">
-                            {`${contactInfo?.role} @ ${contactInfo?.company}`}
-                          </div>
-                        </div>
-                      </div>
-                      <div className="info__table__content">
-                        <table className="info__table">
-                          <tr className="info__table__row">
-                            <td className="info__table__cell">Full Name</td>
-                            <td className="info__table__cell">{`${contactInfo?.firstName} ${contactInfo?.lastName}`}</td>
-                          </tr>
-                          <tr className="info__table__row">
-                            <td className="info__table__cell">Email</td>
-                            <td className="info__table__cell">
-                              {contactInfo?.email}
-                            </td>
-                          </tr>
-                          <tr className="info__table__row">
-                            <td className="info__table__cell">Phone</td>
-                            <td className="info__table__cell">
-                              {contactInfo?.phone}
-                            </td>
-                          </tr>
-                          <tr className="info__table__row">
-                            <td className="info__table__cell">Company</td>
-                            <td className="info__table__cell">
-                              {contactInfo?.company}
-                            </td>
-                          </tr>
-                          <tr className="info__table__row">
-                            <td className="info__table__cell">Address</td>
-                            <td className="info__table__cell">
-                              {contactInfo?.address}
-                            </td>
-                          </tr>
-                        </table>
-                      </div>
-                    </div>
-                  </div>
+                  {contactInfo !== null && (<ContactInfo contactInfo={contactInfo} />)}
                 </Grid>
               </Grid>
             </div>
@@ -298,4 +400,4 @@ const Dashboard = () => {
   );
 };
 
-export default Dashboard;
+export default observer(Dashboard);
