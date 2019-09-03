@@ -7,11 +7,9 @@ import IconButton from "@material-ui/core/IconButton";
 import MenuIcon from "@material-ui/icons/Menu";
 import Drawer from "@material-ui/core/Drawer";
 import List from "@material-ui/core/List";
-import ListItemText from "@material-ui/core/ListItemText";
-import ChevronLeftIcon from "@material-ui/icons/ChevronLeft";
+import ListItemText from "@material-ui/core/ListItemText";  
 import ListItem from "@material-ui/core/ListItem";
 import ListItemIcon from "@material-ui/core/ListItemIcon";
-import Divider from "@material-ui/core/Divider";
 import { images } from "config/images";
 
 import './Navigation.scss'
