@@ -2,6 +2,7 @@
   position: relative;
   top: 75px;
   margin-left: 126px;
+  font-family: "Roboto", "Helvetica", "Arial", sans-serif;
   .search__content {
     position: relative;
   }
@@ -30,6 +31,10 @@
   color: #585858;
 }
 
+.search__field{
+  padding-right: 15px;
+}
+
 .search__content {
   display: flex;
   flex-direction: row;
@@ -38,14 +43,14 @@
 }
 
 .add_contact__btn {
-  height: 35px;
-  min-width: 150px;
+  height: 42px;
+  min-width: 160px;
   justify-content: center;
   background: linear-gradient(45deg, #fe6b8b 30%, #ff8e53 90%);
   color: white;
   display: flex;
   border: 0;
-  font-size: 13px;
+  font-size: 14px;
   border-radius: 5px;
   flex-direction: row;
   outline: 0;
@@ -60,13 +65,30 @@
 }
 
 .search__input__box {
-  height: 32px;
+  height: 42px;
   border: 0;
   background-color: rgb(238, 236, 237);
-  border-radius: 22px;
+  border-radius: 6px;
   padding: 0 0 0 15px;
-  min-width: 260px;
+  min-width: 320px;
   outline: 0;
+}
+
+@media (max-width: 1024px) {
+  .MuiGrid-item {
+    flex: 0 0 100%;
+    width: 100%;
+    padding: 15px !important;
+    .contact__table {
+      overflow: hidden;
+      overflow-x: scroll;
+      width: 100%;
+      border: 1px solid #ccc;
+    }
+    .contact__info {
+      padding: 0 20px;
+    }
+  }
 }
 
 @media (max-width: 380px) {
@@ -75,7 +97,7 @@
   }
 }
 
-@media (min-width: 380px) and (max-width: 788px) {
+@media (min-width: 320px) and (max-width: 788px) {
   .main__container {
     margin-left: 70px;
   }
